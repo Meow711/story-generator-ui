@@ -8,21 +8,112 @@ import { Input } from "@/components/ui/input";
 import { ChevronDown, ChevronRight } from "lucide-react";
 
 interface IStepOneProps {
-  onNext: () => void;
+  onNext: (v?: any) => void;
+  premise: string;
   setPremise: (v: string) => void;
 }
 
-const StepOne = ({ onNext, setPremise }: IStepOneProps) => (
-  <div className="space-y-4">
-    <Textarea
-      placeholder="Enter your story premise here..."
-      onChange={(e) => setPremise(e.target.value)}
-      rows={5}
-      aria-label="Story premise input"
-    />
-    <Button onClick={onNext}>Generate</Button>
-  </div>
-);
+const StepOne = ({ onNext, premise, setPremise }: IStepOneProps) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleGenerateClick = async () => {
+    setIsLoading(true);
+    setError("");
+    try {
+      const response = await fetch("/api/premise", {
+        method: "POST", body: JSON.stringify({
+          premise,
+        })
+      });
+      if (!response.ok) {
+        throw new Error("Failed to execute premise command");
+      }
+      const data = await response.json();
+      console.log("==data:", data)
+      // setPwdResult(data.result);
+      onNext(data);
+    } catch (err) {
+      setError("An error occurred while executing the premise command");
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  return (
+    <div className="space-y-4">
+      <Textarea
+        placeholder="Enter your story premise here..."
+        onChange={(e) => setPremise(e.target.value)}
+        rows={5}
+        aria-label="Story premise input"
+        value={premise}
+      />
+      <Button onClick={handleGenerateClick} disabled={isLoading}>
+        {isLoading ? "Executing..." : "Generate"}
+      </Button>
+    </div>
+  );
+};
+
+interface IStepPremiseDisplayProps {
+  title: string;
+  premise: string;
+  setTitle: (v: string) => void;
+  setNewPremise: (v: string) => void;
+  onNext: (v: any) => void;
+}
+const StepPremiseDisplay = ({ title, premise, setTitle, setNewPremise, onNext }: IStepPremiseDisplayProps) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleGenerateClick = async () => {
+    setIsLoading(true);
+    setError("");
+    try {
+      const response = await fetch("/api/plan", {
+        method: "POST", body: JSON.stringify({
+          title,
+          premise,
+        })
+      });
+      if (!response.ok) {
+        throw new Error("Failed to execute plan command");
+      }
+      const data = await response.json();
+      console.log("==data:", data)
+      onNext(data);
+    } catch (err) {
+      setError("An error occurred while executing the premise command");
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <h5>TITLE</h5>
+      <Input
+        placeholder="Enter your story title..."
+        onChange={(e) => setTitle(e.target.value)}
+        aria-label="Story title input"
+        value={title}
+      />
+      <h5>PREMISE</h5>
+      <Textarea
+        placeholder="Enter your story premise here..."
+        onChange={(e) => setNewPremise(e.target.value)}
+        rows={5}
+        aria-label="Story premise input"
+        value={premise}
+      />
+      <Button onClick={handleGenerateClick} disabled={isLoading}>
+        {isLoading ? 'Executing...' : 'Generate'}
+      </Button>
+    </div>
+  )
+}
 
 interface IEditorProps {
   onUpdate: (key: any, value: string | number) => void;
@@ -83,27 +174,13 @@ const NestedJsonEditor = ({ data, onUpdate, path = [] }: IEditorProps) => {
   );
 };
 
-// Step 2: Editable Nested JSON
-interface IStepTowProps {
+interface IStepPlanDisplayProps {
+  story: any;
   onNext: (data?: any) => void;
 }
 
-const StepTwo = ({ onNext }: IStepTowProps) => {
-  const [data, setData] = useState({
-    character: {
-      name: "John Doe",
-      age: "30",
-      traits: ["brave", "intelligent"],
-    },
-    setting: {
-      place: "New York City",
-      time: "Present day",
-    },
-    plot: {
-      conflict: "Man vs. Society",
-      resolution: "Pending",
-    },
-  });
+const StepPlanDisplay = ({ onNext, story }: IStepPlanDisplayProps) => {
+  const [data, setData] = useState(story);
 
   const handleUpdate = (path: any, value: string | number) => {
     const newData = JSON.parse(JSON.stringify(data));
@@ -137,24 +214,18 @@ const StepThree = ({ story }: IStepThreeProps) => (
 // Main component
 export default function StoryGenerator() {
   const [currentStep, setCurrentStep] = useState(1);
-  const [premise, setPremise] = useState("");
+  const [premise, setPremise] = useState("A young man named Alex wakes up one morning to find that he has the ability to read minds.");
   const [storyData, setStoryData] = useState({});
-  const [story, setStory] = useState("");
+  const [story, setStory] = useState({});
+  const [title, setTitle] = useState("");
+  const [newPremise, setNewPremise] = useState("");
 
   const handleNext = (data?: any) => {
     if (currentStep === 1) {
-      // Here you would typically call an API to generate the initial story structure
-      setStoryData({
-        character: { name: "John Doe", age: "30" },
-        setting: { place: "New York City" },
-        plot: { conflict: "Man vs. Society" },
-      });
+      setTitle(data?.title);
+      setNewPremise(data?.premise);
     } else if (currentStep === 2) {
-      setStoryData(data);
-      // Here you would call an API to generate the story based on the edited data
-      setStory(
-        `Once upon a time, ${data.character.name}, aged ${data.character.age}, found themselves in ${data.setting.place}. They faced a ${data.plot.conflict} conflict...`
-      );
+      setStory(data);
     }
     setCurrentStep(currentStep + 1);
   };
@@ -169,10 +240,11 @@ export default function StoryGenerator() {
 
       <div className="space-y-4">
         {currentStep === 1 && (
-          <StepOne onNext={handleNext} setPremise={setPremise} />
+          <StepOne onNext={handleNext} setPremise={setPremise} premise={premise} />
         )}
-        {currentStep === 2 && <StepTwo onNext={handleNext} />}
-        {currentStep === 3 && <StepThree story={story} />}
+        {currentStep === 2 && <StepPremiseDisplay onNext={handleNext} title={title} setTitle={setTitle} premise={newPremise} setNewPremise={setNewPremise} />}
+        {currentStep === 3 && <StepPlanDisplay onNext={handleNext} story={story} />}
+        {/* {currentStep === 3 && <StepThree story={story} />} */}
       </div>
     </div>
   );

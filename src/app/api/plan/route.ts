@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { exec } from "child_process";
 import { promisify } from "util";
 import fs from "fs/promises";
@@ -8,17 +8,29 @@ const execAsync = promisify(exec);
 
 const SCRIPT_ROOT_PATH = process.env.SCRIPT_ROOT_PATH || "/";
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
-    // Execute the Python script
-    const { stdout, stderr } = await execAsync(
-      `python ${path.join(SCRIPT_ROOT_PATH, "plan/generate.py")}`
-    );
+    // Parse the request body
+    const { title, premise } = await request.json()
 
-    if (stderr) {
-      console.error("Error executing Python script:", stderr);
-      throw new Error("Failed to generate plan");
+    if (!premise || !title) {
+      return NextResponse.json({ error: 'title and premise is required' }, { status: 400 })
     }
+
+    // generate new premise file
+    // const inputJsonContent = JSON.stringify({ title, premise }, null, 2);
+    // const inputJsonPath = path.join(SCRIPT_ROOT_PATH, 'output/premise.json');
+    // await fs.writeFile(inputJsonPath, inputJsonContent, 'utf-8')
+
+    // // Execute the Python script
+    // const { stdout, stderr } = await execAsync(
+    //   `python ${path.join(SCRIPT_ROOT_PATH, "plan/generate.py")}`
+    // );
+
+    // if (stderr) {
+    //   console.error("Error executing Python script:", stderr);
+    //   throw new Error("Failed to generate plan");
+    // }
 
     // Read the output file
     const outputPath = path.join(SCRIPT_ROOT_PATH, "output/plan.json");
