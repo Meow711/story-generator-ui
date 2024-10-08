@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -115,64 +115,96 @@ const StepPremiseDisplay = ({ title, premise, setTitle, setNewPremise, onNext }:
   )
 }
 
-interface IEditorProps {
-  onUpdate: (key: any, value: string | number) => void;
-  data: any;
-  path?: string[];
+interface JSONViewerProps {
+  data: any
+  level?: number
 }
 
-// Recursive component for nested JSON editing
-const NestedJsonEditor = ({ data, onUpdate, path = [] }: IEditorProps) => {
-  const [isExpanded, setIsExpanded] = useState(true);
+const JSONViewer = ({ data, level = 0 }: JSONViewerProps) => {
+  const [isExpanded, setIsExpanded] = useState(false)
 
-  const handleUpdate = (key: any, value: string | number) => {
-    onUpdate([...path, key], value);
-  };
-
-  if (typeof data !== "object" || data === null) {
-    return (
-      <Input
-        value={data}
-        onChange={(e) => onUpdate(path, e.target.value)}
-        className="w-full"
-        aria-label={`Value for ${path.join(".")}`}
-      />
-    );
+  const toggleExpand = () => {
+    setIsExpanded(!isExpanded)
   }
 
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center space-x-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setIsExpanded(!isExpanded)}
-          aria-expanded={isExpanded}
-          aria-label={`Toggle ${path.join(".")} expansion`}
-        >
-          {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-        </Button>
-        {path.length > 0 && (
-          <span className="font-medium">{path[path.length - 1]}:</span>
+  const renderValue = (value: any): JSX.Element => {
+    if (typeof value === 'string') {
+      return <span className="text-green-600">"{value}"</span>
+    } else if (typeof value === 'number') {
+      return <span className="text-blue-600">{value}</span>
+    } else if (typeof value === 'boolean') {
+      return <span className="text-purple-600">{value.toString()}</span>
+    } else if (value === null) {
+      return <span className="text-gray-500">null</span>
+    } else if (Array.isArray(value) || typeof value === 'object') {
+      return <JSONViewer data={value} level={level + 1} />
+    }
+    return <span>{String(value)}</span>
+  }
+
+  if (Array.isArray(data)) {
+    return (
+      <div className="ml-4">
+        <span className="cursor-pointer" onClick={toggleExpand} aria-expanded={isExpanded}>
+          {isExpanded ? <ChevronDown className="inline" size={16} /> : <ChevronRight className="inline" size={16} />}
+          Array[{data.length}]
+        </span>
+        {isExpanded && (
+          <div className="ml-4">
+            {data.map((item, index) => (
+              <div key={index} className="my-1">
+                <span className="text-gray-500">{index}: </span>
+                {renderValue(item)}
+              </div>
+            ))}
+          </div>
         )}
       </div>
-      {isExpanded && (
-        <div className="pl-4 border-l border-gray-200">
-          {Object.entries(data).map(([key, value]) => (
-            <div key={key} className="flex items-center space-x-2 mb-2">
-              <span className="w-1/3 font-medium">{key}:</span>
-              <NestedJsonEditor
-                data={value}
-                onUpdate={handleUpdate}
-                path={[...path, key]}
-              />
-            </div>
-          ))}
-        </div>
-      )}
+    )
+  } else if (typeof data === 'object' && data !== null) {
+    return (
+      <div className="ml-4">
+        <span className="cursor-pointer" onClick={toggleExpand} aria-expanded={isExpanded}>
+          {isExpanded ? <ChevronDown className="inline" size={16} /> : <ChevronRight className="inline" size={16} />}
+          Object
+        </span>
+        {isExpanded && (
+          <div className="ml-4">
+            {Object.entries(data).map(([key, value]) => (
+              <div key={key} className="my-1">
+                <span className="text-gray-500">{key}: </span>
+                {renderValue(value)}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  return <span>{renderValue(data)}</span>
+}
+
+interface CharacterProfileProps {
+  name: string
+  bio: string
+}
+
+const CharacterProfile = ({ name, bio }: CharacterProfileProps) => {
+  return (
+    <div className="w-full bg-background border border-border rounded-lg shadow-sm overflow-hidden">
+      <div className="p-3">
+        <h2 className="text-lg font-semibold text-foreground mb-1">{name}</h2>
+        <p className="text-sm text-muted-foreground">{bio}</p>
+      </div>
     </div>
-  );
-};
+  )
+}
+
+type EntityType = {
+  name: string;
+  description: string;
+}
 
 interface IStepPlanDisplayProps {
   story: any;
@@ -182,41 +214,69 @@ interface IStepPlanDisplayProps {
 const StepPlanDisplay = ({ onNext, story }: IStepPlanDisplayProps) => {
   const [data, setData] = useState(story);
 
-  const handleUpdate = (path: any, value: string | number) => {
-    const newData = JSON.parse(JSON.stringify(data));
-    let current = newData;
-    for (let i = 0; i < path.length - 1; i++) {
-      current = current[path[i]];
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleGenerateClick = async () => {
+    setIsLoading(true);
+    setError("");
+    try {
+      const response = await fetch("/api/story", {
+        method: "POST"
+      });
+      if (!response.ok) {
+        throw new Error("Failed to execute premise command");
+      }
+      const data = await response.json();
+      console.log("==data:", data.story)
+      // setPwdResult(data.result);
+      onNext(data?.story);
+    } catch (err) {
+      setError("An error occurred while executing the premise command");
+      console.error(err);
+    } finally {
+      setIsLoading(false);
     }
-    current[path[path.length - 1]] = value;
-    setData(newData);
   };
 
   return (
     <div className="space-y-4">
-      <NestedJsonEditor data={data} onUpdate={handleUpdate} />
-      <Button onClick={() => onNext(data)}>Continue</Button>
+      {data?.entities?.map((et: EntityType) => <div className="py-1"><CharacterProfile name={et.name} bio={et.description} /></div>)}
+      <JSONViewer data={data} />
+      <Button onClick={handleGenerateClick} disabled={isLoading}>
+        {isLoading ? "Executing..." : "Continue"}
+      </Button>
     </div>
   );
 };
 
-// Step 3: Story Display
-interface IStepThreeProps {
+interface IStepStoryDisolayProps {
+  title: string;
   story: string;
 }
-const StepThree = ({ story }: IStepThreeProps) => (
-  <div className="prose">
-    <h2>Generated Story</h2>
-    <p>{story}</p>
-  </div>
-);
+const StepStoryDisplay = ({ title, story }: IStepStoryDisolayProps) => {
+  const lines = story.split('\n')
+  return (
+    <div className="prose">
+      <h2>{title}</h2>
+      <div className="w-full max-w-2xl mx-auto bg-background border border-border rounded-lg shadow-sm p-4">
+        {lines.map((line, index) => (
+          <Fragment key={index}>
+            {line}
+            {index < lines.length - 1 && <br />}
+          </Fragment>
+        ))}
+      </div>
+    </div>
+  )
+};
 
 // Main component
 export default function StoryGenerator() {
   const [currentStep, setCurrentStep] = useState(1);
   const [premise, setPremise] = useState("A young man named Alex wakes up one morning to find that he has the ability to read minds.");
   const [storyData, setStoryData] = useState({});
-  const [story, setStory] = useState({});
+  const [story, setStory] = useState("");
   const [title, setTitle] = useState("");
   const [newPremise, setNewPremise] = useState("");
 
@@ -225,15 +285,17 @@ export default function StoryGenerator() {
       setTitle(data?.title);
       setNewPremise(data?.premise);
     } else if (currentStep === 2) {
+      setStoryData(data);
+    } else if (currentStep === 3) {
       setStory(data);
     }
     setCurrentStep(currentStep + 1);
   };
 
   return (
-    <div className="container mx-auto p-4 space-y-8">
+    <div className="container mx-auto p-4 space-y-8 w-full max-w-2xl mx-auto" >
       <Progress
-        value={(currentStep / 3) * 100}
+        value={(currentStep / 4) * 100}
         className="w-full"
         aria-label={`Step ${currentStep} of 3`}
       />
@@ -243,8 +305,8 @@ export default function StoryGenerator() {
           <StepOne onNext={handleNext} setPremise={setPremise} premise={premise} />
         )}
         {currentStep === 2 && <StepPremiseDisplay onNext={handleNext} title={title} setTitle={setTitle} premise={newPremise} setNewPremise={setNewPremise} />}
-        {currentStep === 3 && <StepPlanDisplay onNext={handleNext} story={story} />}
-        {/* {currentStep === 3 && <StepThree story={story} />} */}
+        {currentStep === 3 && <StepPlanDisplay onNext={handleNext} story={storyData} />}
+        {currentStep === 4 && <StepStoryDisplay story={story} title={title} />}
       </div>
     </div>
   );

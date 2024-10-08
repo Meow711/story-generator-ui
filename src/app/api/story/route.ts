@@ -12,13 +12,13 @@ export async function POST() {
   try {
     // Execute the Python script
     const { stdout, stderr } = await execAsync(
-      `python ${path.join(SCRIPT_ROOT_PATH, "story/generate.py")}`
+      `cd ${SCRIPT_ROOT_PATH} && python ${path.join(SCRIPT_ROOT_PATH, "story/generate.py")}`
     );
 
-    if (stderr) {
-      console.error("Error executing Python script:", stderr);
-      throw new Error("Failed to generate story");
-    }
+    // if (stderr) {
+    //   console.error("Error executing Python script:", stderr);
+    //   throw new Error("Failed to generate story");
+    // }
 
     // Read the output file
     const outputPath = path.join(SCRIPT_ROOT_PATH, "output/story.txt");

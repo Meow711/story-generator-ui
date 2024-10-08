@@ -34,10 +34,10 @@ export async function POST(request: NextRequest) {
 
     // await fs.writeFile(inputJsonPath, inputJsonContent, 'utf-8')
 
-    // // Execute the Python script
-    // const { stdout, stderr } = await execAsync(
-    //   `python ${path.join(SCRIPT_ROOT_PATH, "premise/generate.py")}`
-    // );
+    // Execute the Python script
+    const { stdout, stderr } = await execAsync(
+      `cd ${SCRIPT_ROOT_PATH} && python ${path.join(SCRIPT_ROOT_PATH, "premise/generate.py")}`
+    );
 
     // if (stderr) {
     //   console.error("Error executing Python script:", stderr);

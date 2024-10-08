@@ -11,21 +11,21 @@ const SCRIPT_ROOT_PATH = process.env.SCRIPT_ROOT_PATH || "/";
 export async function POST(request: NextRequest) {
   try {
     // Parse the request body
-    const { title, premise } = await request.json()
+    // const { title, premise } = await request.json()
 
-    if (!premise || !title) {
-      return NextResponse.json({ error: 'title and premise is required' }, { status: 400 })
-    }
+    // if (!premise || !title) {
+    //   return NextResponse.json({ error: 'title and premise is required' }, { status: 400 })
+    // }
 
     // generate new premise file
     // const inputJsonContent = JSON.stringify({ title, premise }, null, 2);
     // const inputJsonPath = path.join(SCRIPT_ROOT_PATH, 'output/premise.json');
     // await fs.writeFile(inputJsonPath, inputJsonContent, 'utf-8')
 
-    // // Execute the Python script
-    // const { stdout, stderr } = await execAsync(
-    //   `python ${path.join(SCRIPT_ROOT_PATH, "plan/generate.py")}`
-    // );
+    // Execute the Python script
+    const { stdout, stderr } = await execAsync(
+      `cd ${SCRIPT_ROOT_PATH} && python ${path.join(SCRIPT_ROOT_PATH, "plan/generate.py")}`
+    );
 
     // if (stderr) {
     //   console.error("Error executing Python script:", stderr);
