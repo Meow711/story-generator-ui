@@ -161,13 +161,13 @@ const CharacterProfile = ({ name, bio, onChatClick }: CharacterProfileProps) => 
     try {
       const response = await fetch(`/api/generate_image`, {
         method: "POST",
-        body: JSON.stringify({ bio })
+        body: JSON.stringify({ prompt: bio })
       })
       if (!response.ok) {
         throw new Error(`Failed to generate entity ${name}`);
       }
       const data = await response.json();
-      setAvatarUrl(data.result);
+      setAvatarUrl(`${data.result}?x-oss-process=image/resize,w_64`);
     } catch (error) {
       console.error(error);
     }

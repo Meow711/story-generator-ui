@@ -6,7 +6,7 @@ const STATUS_URL = 'https://aigc.tokenso.com/api/aigc/job/status'
 async function checkJobStatus(jobId: string): Promise<string[]> {
     const response = await fetch(`${STATUS_URL}?job_id=${jobId}`, {
         headers: {
-            "x-api-key": process.env.AIGC_KEY || "dev_user"
+            "x-api-key": process.env.AIGC_KEY || ""
         }
     })
     if (!response.ok) {
@@ -30,7 +30,7 @@ async function checkJobStatus(jobId: string): Promise<string[]> {
     }
 
     // If job is still processing, wait and check again
-    await new Promise(resolve => setTimeout(resolve, 3000))
+    await new Promise(resolve => setTimeout(resolve, 5000))
     return checkJobStatus(jobId)
 }
 
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                "x-api-key": process.env.AIGC_KEY || "dev_user"
+                "x-api-key": process.env.AIGC_KEY || ""
             },
             body: JSON.stringify({
                 prompt,
