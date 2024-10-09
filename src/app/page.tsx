@@ -5,7 +5,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { ChevronDown, ChevronRight } from "lucide-react";
+
+const AlertErrorBox = ({ error }: { error: string }) => {
+  return error ? (
+    <Alert variant="destructive">
+      <AlertTitle>Error</AlertTitle>
+      <AlertDescription>{error}</AlertDescription>
+    </Alert>
+  ) : <></>
+}
 
 interface IStepOneProps {
   onNext: (v?: any) => void;
@@ -52,6 +62,7 @@ const StepOne = ({ onNext, premise, setPremise }: IStepOneProps) => {
       <Button onClick={handleGenerateClick} disabled={isLoading}>
         {isLoading ? "Executing..." : "Generate"}
       </Button>
+      <AlertErrorBox error={error} />
     </div>
   );
 };
@@ -111,6 +122,7 @@ const StepPremiseDisplay = ({ title, premise, setTitle, setNewPremise, onNext }:
       <Button onClick={handleGenerateClick} disabled={isLoading}>
         {isLoading ? 'Executing...' : 'Generate'}
       </Button>
+      <AlertErrorBox error={error} />
     </div>
   )
 }
@@ -246,6 +258,7 @@ const StepPlanDisplay = ({ onNext, story }: IStepPlanDisplayProps) => {
       <Button onClick={handleGenerateClick} disabled={isLoading}>
         {isLoading ? "Executing..." : "Continue"}
       </Button>
+      <AlertErrorBox error={error} />
     </div>
   );
 };
