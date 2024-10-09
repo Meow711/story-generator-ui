@@ -11,28 +11,28 @@ const SCRIPT_ROOT_PATH = process.env.SCRIPT_ROOT_PATH || "";
 export async function POST(request: NextRequest) {
   try {
     // Parse the request body
-    // const { premise } = await request.json()
+    const { premise } = await request.json()
 
-    // if (!premise) {
-    //   return NextResponse.json({ error: 'Premise is required' }, { status: 400 })
-    // }
+    if (!premise) {
+      return NextResponse.json({ error: 'Premise is required' }, { status: 400 })
+    }
 
-    // // Create the content object
-    // const content = {
-    //   title: {
-    //     instruction: `Write a title for a story which is about: ${premise}`,
-    //     response_prefix: "Sure, here is a possible title:\n\nTitle:"
-    //   },
-    //   premise: {
-    //     instruction: `Write a premise for a story which is about: ${premise}`,
-    //     response_prefix: "Title: {title}\n\nPremise:"
-    //   }
-    // }
+    // Create the content object
+    const content = {
+      title: {
+        instruction: `Write a title for a story which is about: ${premise}`,
+        response_prefix: "Sure, here is a possible title:\n\nTitle:"
+      },
+      premise: {
+        instruction: `Write a premise for a story which is about: ${premise}`,
+        response_prefix: "Title: {title}\n\nPremise:"
+      }
+    }
 
-    // const inputJsonContent = JSON.stringify(content, null, 2)
-    // const inputJsonPath = path.join(SCRIPT_ROOT_PATH, 'premise/prompts.json')
+    const inputJsonContent = JSON.stringify(content, null, 2)
+    const inputJsonPath = path.join(SCRIPT_ROOT_PATH, 'premise/prompts.json')
 
-    // await fs.writeFile(inputJsonPath, inputJsonContent, 'utf-8')
+    await fs.writeFile(inputJsonPath, inputJsonContent, 'utf-8')
 
     // Execute the Python script
     const { stdout, stderr } = await execAsync(
