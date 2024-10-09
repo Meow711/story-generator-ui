@@ -4,8 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "build": "next build && npm run build-after",
+    "build-after": "mv .next/static .next/standalone/.next/static",
+    "start": "next start -p 6006",
     "lint": "next lint"
   },
   "dependencies": {
