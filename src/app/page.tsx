@@ -7,8 +7,9 @@ import { Progress } from "@/components/ui/progress";
 // import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { ChevronDown, ChevronRight } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Card, CardContent } from "@/components/ui/card"
 import ImageLoader from "@/components/story/image";
+import Image from 'next/image'
 
 const AlertErrorBox = ({ error }: { error: string }) => {
   return error ? (
@@ -167,7 +168,7 @@ const CharacterProfile = ({ name, bio, onChatClick }: CharacterProfileProps) => 
         throw new Error(`Failed to generate entity ${name}`);
       }
       const data = await response.json();
-      setAvatarUrl(`${data.result}?x-oss-process=image/resize,w_64`);
+      setAvatarUrl(data.result);
     } catch (error) {
       console.error(error);
     }
@@ -177,25 +178,21 @@ const CharacterProfile = ({ name, bio, onChatClick }: CharacterProfileProps) => 
     requestGenerateImage();
   }, [bio])
   return (
-    // <div className="w-full bg-background border border-border rounded-lg shadow-sm overflow-hidden">
-    //   <div className="p-3">
-    //     <h2 className="text-lg font-semibold text-foreground mb-1">{name}</h2>
-    //     <p className="text-sm text-muted-foreground">{bio}</p>
-    //   </div>
-    // </div>
-    <div className="flex items-start space-x-4 p-4 bg-background border border-border rounded-lg shadow-sm">
-      <Avatar className="w-16 h-16">
-        <AvatarImage src={avatarUrl} alt={name} />
-        <AvatarFallback>{name.split(' ').map(n => n[0]).join('').toUpperCase()}</AvatarFallback>
-      </Avatar>
-      <div className="flex-1">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-xl font-semibold text-foreground">{name}</h2>
-          <Button size="sm" onClick={onChatClick}>Chat</Button>
-        </div>
-        <p className="text-sm text-muted-foreground">{bio}</p>
+    <Card className="w-full overflow-hidden flex flex-col">
+      <div className="relative w-full pt-[100%]">
+        <Image
+          src={avatarUrl}
+          alt={name}
+          layout="fill"
+          objectFit="cover"
+          className="absolute top-0 left-0 transition-transform duration-300 hover:scale-110"
+        />
       </div>
-    </div>
+      <CardContent className="p-3 bg-background">
+        <h3 className="text-lg font-semibold text-foreground truncate">{name}</h3>
+        <p className="text-sm text-muted-foreground">{bio}</p>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -210,9 +207,11 @@ interface IStepPlanDisplayProps {
 
 const StepPlanDisplay = ({ story }: IStepPlanDisplayProps) => {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 container mx-auto">
       <h5>ENTITIES</h5>
-      {story?.entities?.map((et: EntityType) => <div className="py-1" key={et.name}><CharacterProfile name={et.name} bio={et.description} /></div>)}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {story?.entities?.map((et: EntityType, index: number) => <CharacterProfile key={index} name={et.name} bio={et.description} />)}
+      </div>
       <h5>DATA</h5>
       <JSONViewer data={story} />
     </div>
