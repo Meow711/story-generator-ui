@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import ImageLoader from "@/components/story/image";
 
 const AlertErrorBox = ({ error }: { error: string }) => {
   return error ? (
@@ -71,6 +72,8 @@ const StepPremiseDisplay = ({ title, premise, setTitle, setNewPremise }: IStepPr
           <p className="text-sm">{premise}</p>
         </div>
       </div>
+      <h5>COVER</h5>
+      <ImageLoader prompt={premise} alt="" />
     </div>
   )
 }
@@ -189,7 +192,7 @@ const StepPlanDisplay = ({ story }: IStepPlanDisplayProps) => {
   return (
     <div className="space-y-4">
       <h5>ENTITIES</h5>
-      {story?.entities?.map((et: EntityType) => <div className="py-1"><CharacterProfile name={et.name} bio={et.description} /></div>)}
+      {story?.entities?.map((et: EntityType) => <div className="py-1" key={et.name}><CharacterProfile name={et.name} bio={et.description} /></div>)}
       <h5>DATA</h5>
       <JSONViewer data={story} />
     </div>
@@ -304,7 +307,6 @@ export default function StoryGenerator() {
   }
 
   const handleClick = () => {
-    console.log(">>>>>", currentStep)
     switch (currentStep) {
       case 1:
         handleRequestPremise();
