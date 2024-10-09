@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Fragment } from "react";
+import { useState, Fragment, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -47,7 +47,7 @@ interface IStepPremiseDisplayProps {
 const StepPremiseDisplay = ({ title, premise, setTitle, setNewPremise }: IStepPremiseDisplayProps) => {
   return (
     <div className="space-y-4">
-      <h5>TITLE</h5>
+      <h5 className="font-bold">TITLE</h5>
       {/* <Input
         placeholder="Enter your story title..."
         onChange={(e) => setTitle(e.target.value)}
@@ -151,11 +151,31 @@ const JSONViewer = ({ data, level = 0 }: JSONViewerProps) => {
 interface CharacterProfileProps {
   name: string
   bio: string
-  avatarUrl?: string;
   onChatClick?: () => void;
 }
 
-const CharacterProfile = ({ avatarUrl, name, bio, onChatClick }: CharacterProfileProps) => {
+const CharacterProfile = ({ name, bio, onChatClick }: CharacterProfileProps) => {
+  const [avatarUrl, setAvatarUrl] = useState("");
+
+  const requestGenerateImage = async () => {
+    try {
+      const response = await fetch(`/api/generate_image`, {
+        method: "POST",
+        body: JSON.stringify({ bio })
+      })
+      if (!response.ok) {
+        throw new Error(`Failed to generate entity ${name}`);
+      }
+      const data = await response.json();
+      setAvatarUrl(data.result);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  useEffect(() => {
+    requestGenerateImage();
+  }, [bio])
   return (
     // <div className="w-full bg-background border border-border rounded-lg shadow-sm overflow-hidden">
     //   <div className="p-3">
@@ -341,7 +361,7 @@ export default function StoryGenerator() {
         {storyData && <StepPlanDisplay story={storyData} />}
         {story && <StepStoryDisplay story={story} />}
         <div className="text-center">
-          <Button onClick={handleClick} disabled={isLoading} >
+          <Button onClick={handleClick} disabled={isLoading || (currentStep === 1 && !premise)} >
             {isLoading ? "Executing..." : currentStep === 1 ? 'Start' : currentStep === 4 ? 'Restart' : 'Continue'}
           </Button>
         </div>
