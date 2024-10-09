@@ -7,7 +7,8 @@
     "build": "next build && npm run build-after",
     "build-after": "mv .next/static .next/standalone/.next/static",
     "start": "next start -p 6006",
-    "lint": "next lint"
+    "lint": "next lint",
+    "deploy": "pm2 start ecosystem.config.js"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.1",
