@@ -87,10 +87,12 @@ interface IStepPlanDisplayProps {
 
 const StepPlanDisplay = ({ story }: IStepPlanDisplayProps) => {
   const { openChat, setUsers, users } = useChatContext();
+  const [init, setInit] = useState(true);
 
   const handleChat = (user: IUser) => {
     openChat(user);
   }
+  console.log("====users", users)
 
   const requestGenerateImage = async (et: IUser) => {
     try {
@@ -102,25 +104,27 @@ const StepPlanDisplay = ({ story }: IStepPlanDisplayProps) => {
         throw new Error(`Failed to generate entity ${et.name}`);
       }
       const data = await response.json();
-      setUsers(users.map(u => {
-        if (u.name === et.name) {
-          return { ...u, avatar: data.result }
-        }
-        return { ...u }
-      }))
+      return { ...et, avatar: data.result }
     } catch (error) {
       console.error(error);
+      return { ...et }
     }
   }
 
   useEffect(() => {
     if (story?.entities) {
-      story.entities.forEach((et: IUser) => {
-        requestGenerateImage(et)
-      })
       setUsers(story.entities);
     }
   }, [story])
+
+  useEffect(() => {
+    if (init && users.length) {
+      Promise.allSettled(users.map(et => requestGenerateImage(et))).then(res => {
+        setInit(false)
+        setUsers(res.map((r, idx) => r.status === 'fulfilled' ? r.value : { ...users[idx] }))
+      })
+    }
+  }, [users])
   return (
     <div className="space-y-4 container mx-auto">
       <h5>ENTITIES</h5>
