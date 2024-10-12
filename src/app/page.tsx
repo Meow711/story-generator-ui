@@ -62,7 +62,7 @@ const StepPremiseDisplay = ({ title, premise, setTitle, setNewPremise }: IStepPr
           <p className="text-sm">{title}</p>
         </div>
       </div>
-      <h5>PREMISE</h5>
+      <h5  className="font-bold">PREMISE</h5>
       {/* <Textarea
         placeholder="Enter your story premise here..."
         onChange={(e) => setNewPremise(e.target.value)}
@@ -75,7 +75,7 @@ const StepPremiseDisplay = ({ title, premise, setTitle, setNewPremise }: IStepPr
           <p className="text-sm">{premise}</p>
         </div>
       </div>
-      <h5>COVER</h5>
+      <h5  className="font-bold">COVER</h5>
       <ImageLoader prompt={premise} alt="" />
     </div>
   )
@@ -127,11 +127,11 @@ const StepPlanDisplay = ({ story }: IStepPlanDisplayProps) => {
   }, [users])
   return (
     <div className="space-y-4 container mx-auto">
-      <h5>ENTITIES</h5>
+      <h5  className="font-bold">ENTITIES</h5>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {users.map((et: IUser, index: number) => <CharacterProfile key={index} name={et.name} bio={et.description} avatar={et.avatar} onChatClick={handleChat} />)}
       </div>
-      <h5>DATA</h5>
+      <h5  className="font-bold">DATA</h5>
       <JSONTree data={story} />
       <ChatDialog />
     </div>
@@ -145,7 +145,7 @@ const StepStoryDisplay = ({ story }: IStepStoryDisolayProps) => {
   const lines = story.split('\n')
   return (
     <div className="prose space-y-4">
-      <h5>FULL STORY</h5>
+      <h5  className="font-bold">FULL STORY</h5>
       <div className="w-full max-w-2xl mx-auto bg-background border border-border rounded-lg shadow-sm p-4 text-sm">
         {lines.map((line, index) => (
           <Fragment key={index}>
