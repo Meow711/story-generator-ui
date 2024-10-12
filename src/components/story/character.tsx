@@ -12,10 +12,11 @@ interface CharacterProfileProps {
     name: string
     bio: string
     avatar?: string
-    onChatClick: (user: IUser) => void;
+    onChatClick?: (user: IUser) => void;
+    hiddenChat?: boolean;
 }
 
-const CharacterProfile = ({ name, bio, avatar, onChatClick }: CharacterProfileProps) => {
+const CharacterProfile = ({ name, bio, avatar, onChatClick, hiddenChat }: CharacterProfileProps) => {
     return (
         <Card className="w-full overflow-hidden flex flex-col">
             <div className="relative w-full pt-[100%]">
@@ -24,12 +25,12 @@ const CharacterProfile = ({ name, bio, avatar, onChatClick }: CharacterProfilePr
                     alt={name}
                     layout="fill"
                     objectFit="cover"
-                    className="absolute top-0 left-0 transition-transform duration-300 hover:scale-110"
+                    className="absolute top-0 left-0"
                 />}
-                <Button onClick={() => onChatClick({ name, description: bio, avatar })} className="absolute top-2 right-2">
+                {!hiddenChat && <Button onClick={() => onChatClick && onChatClick({ name, description: bio, avatar })} className="absolute top-2 right-2">
                     <MessageCircle className="mr-2 h-4 w-4" />
                     Chat
-                </Button>
+                </Button>}
             </div>
             <CardContent className="p-3 bg-background">
                 <h3 className="text-lg font-semibold text-foreground truncate">{name}</h3>

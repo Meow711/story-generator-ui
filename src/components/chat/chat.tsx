@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { Send } from 'lucide-react'
 import { useChatContext, IMessage } from './context'
+import CharacterProfile from '../story/character'
 
 const ME = 'me';
 
@@ -30,7 +31,7 @@ const ChatComponent = () => {
     }
 
     const currentContactMsgs = messages.filter(m => (m.sender === ME && m.receiver === currentUser?.name) || m.sender === currentUser?.name);
-   
+
     return (
         <div className="flex h-[600px] max-w-4xl mx-auto border rounded-lg overflow-hidden w-full">
             {/* Contacts List */}
@@ -80,6 +81,10 @@ const ChatComponent = () => {
 
                         {/* Messages */}
                         <ScrollArea className="flex-1 p-4">
+                            <div className='grid grid-cols-2'>
+                                <CharacterProfile name={currentUser.name} bio={currentUser.description} avatar={currentUser.avatar} hiddenChat />
+                            </div>
+
                             {currentContactMsgs.map(message => (
                                 <div
                                     key={message.id}
