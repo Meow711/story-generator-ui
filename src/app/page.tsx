@@ -86,14 +86,38 @@ interface IStepPlanDisplayProps {
 }
 
 const StepPlanDisplay = ({ story }: IStepPlanDisplayProps) => {
-  const { openChat, setUsers } = useChatContext();
+  const { openChat, setUsers, users } = useChatContext();
 
   const handleChat = (user: IUser) => {
     openChat(user);
   }
 
+  const requestGenerateImage = async (et: IUser) => {
+    try {
+      const response = await fetch(`/api/generate_image`, {
+        method: "POST",
+        body: JSON.stringify({ prompt: et.description })
+      })
+      if (!response.ok) {
+        throw new Error(`Failed to generate entity ${et.name}`);
+      }
+      const data = await response.json();
+      setUsers(users.map(u => {
+        if (u.name === et.name) {
+          return { ...u, avatar: data.result }
+        }
+        return { ...u }
+      }))
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
   useEffect(() => {
     if (story?.entities) {
+      story.entities.forEach((et: IUser) => {
+        requestGenerateImage(et)
+      })
       setUsers(story.entities);
     }
   }, [story])
@@ -101,7 +125,7 @@ const StepPlanDisplay = ({ story }: IStepPlanDisplayProps) => {
     <div className="space-y-4 container mx-auto">
       <h5>ENTITIES</h5>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {story?.entities?.map((et: IUser, index: number) => <CharacterProfile key={index} name={et.name} bio={et.description} onChatClick={handleChat} />)}
+        {users.map((et: IUser, index: number) => <CharacterProfile key={index} name={et.name} bio={et.description} avatar={et.avatar} onChatClick={handleChat} />)}
       </div>
       <h5>DATA</h5>
       <JSONTree data={story} />

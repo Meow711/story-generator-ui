@@ -11,10 +11,11 @@ import { IUser } from "../chat/context";
 interface CharacterProfileProps {
     name: string
     bio: string
+    avatar?: string
     onChatClick: (user: IUser) => void;
 }
 
-const CharacterProfile = ({ name, bio, onChatClick }: CharacterProfileProps) => {
+const CharacterProfile = ({ name, bio, avatar, onChatClick }: CharacterProfileProps) => {
     const [avatarUrl, setAvatarUrl] = useState("");
 
     const requestGenerateImage = async () => {
