@@ -6,10 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 // import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { ChevronDown, ChevronRight } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card"
 import ImageLoader from "@/components/story/image";
-import Image from 'next/image'
+import { useChatContext, ChatProvider, IUser } from "@/components/chat/context";
+import ChatDialog from "@/components/chat/chat";
+import CharacterProfile from "@/components/story/character";
+import { JSONTree } from 'react-json-tree';
+
 
 const AlertErrorBox = ({ error }: { error: string }) => {
   return error ? (
@@ -79,141 +81,31 @@ const StepPremiseDisplay = ({ title, premise, setTitle, setNewPremise }: IStepPr
   )
 }
 
-interface JSONViewerProps {
-  data: any
-  level?: number
-}
-
-const JSONViewer = ({ data, level = 0 }: JSONViewerProps) => {
-  const [isExpanded, setIsExpanded] = useState(false)
-
-  const toggleExpand = () => {
-    setIsExpanded(!isExpanded)
-  }
-
-  const renderValue = (value: any): JSX.Element => {
-    if (typeof value === 'string') {
-      return <span className="text-green-600">"{value}"</span>
-    } else if (typeof value === 'number') {
-      return <span className="text-blue-600">{value}</span>
-    } else if (typeof value === 'boolean') {
-      return <span className="text-purple-600">{value.toString()}</span>
-    } else if (value === null) {
-      return <span className="text-gray-500">null</span>
-    } else if (Array.isArray(value) || typeof value === 'object') {
-      return <JSONViewer data={value} level={level + 1} />
-    }
-    return <span>{String(value)}</span>
-  }
-
-  if (Array.isArray(data)) {
-    return (
-      <div className="ml-4">
-        <span className="cursor-pointer" onClick={toggleExpand} aria-expanded={isExpanded}>
-          {isExpanded ? <ChevronDown className="inline" size={16} /> : <ChevronRight className="inline" size={16} />}
-          Array[{data.length}]
-        </span>
-        {isExpanded && (
-          <div className="ml-4">
-            {data.map((item, index) => (
-              <div key={index} className="my-1">
-                <span className="text-gray-500">{index}: </span>
-                {renderValue(item)}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    )
-  } else if (typeof data === 'object' && data !== null) {
-    return (
-      <div className="ml-4">
-        <span className="cursor-pointer" onClick={toggleExpand} aria-expanded={isExpanded}>
-          {isExpanded ? <ChevronDown className="inline" size={16} /> : <ChevronRight className="inline" size={16} />}
-          Object
-        </span>
-        {isExpanded && (
-          <div className="ml-4">
-            {Object.entries(data).map(([key, value]) => (
-              <div key={key} className="my-1">
-                <span className="text-gray-500">{key}: </span>
-                {renderValue(value)}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    )
-  }
-
-  return <span>{renderValue(data)}</span>
-}
-
-interface CharacterProfileProps {
-  name: string
-  bio: string
-  onChatClick?: () => void;
-}
-
-const CharacterProfile = ({ name, bio, onChatClick }: CharacterProfileProps) => {
-  const [avatarUrl, setAvatarUrl] = useState("");
-
-  const requestGenerateImage = async () => {
-    try {
-      const response = await fetch(`/api/generate_image`, {
-        method: "POST",
-        body: JSON.stringify({ prompt: bio })
-      })
-      if (!response.ok) {
-        throw new Error(`Failed to generate entity ${name}`);
-      }
-      const data = await response.json();
-      setAvatarUrl(data.result);
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
-  useEffect(() => {
-    requestGenerateImage();
-  }, [bio])
-  return (
-    <Card className="w-full overflow-hidden flex flex-col">
-      <div className="relative w-full pt-[100%]">
-        <Image
-          src={avatarUrl}
-          alt={name}
-          layout="fill"
-          objectFit="cover"
-          className="absolute top-0 left-0 transition-transform duration-300 hover:scale-110"
-        />
-      </div>
-      <CardContent className="p-3 bg-background">
-        <h3 className="text-lg font-semibold text-foreground truncate">{name}</h3>
-        <p className="text-sm text-muted-foreground">{bio}</p>
-      </CardContent>
-    </Card>
-  )
-}
-
-type EntityType = {
-  name: string;
-  description: string;
-}
-
 interface IStepPlanDisplayProps {
   story: any;
 }
 
 const StepPlanDisplay = ({ story }: IStepPlanDisplayProps) => {
+  const { openChat, setUsers } = useChatContext();
+
+  const handleChat = (user: IUser) => {
+    openChat(user);
+  }
+
+  useEffect(() => {
+    if (story?.entities) {
+      setUsers(story.entities);
+    }
+  }, [story])
   return (
     <div className="space-y-4 container mx-auto">
       <h5>ENTITIES</h5>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {story?.entities?.map((et: EntityType, index: number) => <CharacterProfile key={index} name={et.name} bio={et.description} />)}
+        {story?.entities?.map((et: IUser, index: number) => <CharacterProfile key={index} name={et.name} bio={et.description} onChatClick={handleChat} />)}
       </div>
       <h5>DATA</h5>
-      <JSONViewer data={story} />
+      <JSONTree data={story} />
+      <ChatDialog />
     </div>
   );
 };
@@ -357,7 +249,7 @@ export default function StoryGenerator() {
       <div className="space-y-4">
         <StepOne setPremise={setPremise} premise={premise} />
         {title && newPremise && 2 && <StepPremiseDisplay title={title} setTitle={setTitle} premise={newPremise} setNewPremise={setNewPremise} />}
-        {storyData && <StepPlanDisplay story={storyData} />}
+        {storyData && <ChatProvider><StepPlanDisplay story={storyData} /></ChatProvider>}
         {story && <StepStoryDisplay story={story} />}
         <div className="text-center">
           <Button onClick={handleClick} disabled={isLoading || (currentStep === 1 && !premise)} >
