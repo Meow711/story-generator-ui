@@ -13,6 +13,7 @@ import CharacterProfile from "@/components/story/character";
 import { JSONTree } from 'react-json-tree';
 import OutlineComponent from "@/components/story/outline";
 import { StoryProvider, useStoryContext, ACTIONS } from "@/components/story/context";
+import Layout from '@/components/layout/layout';
 
 
 const AlertErrorBox = ({ error }: { error: string }) => {
@@ -277,8 +278,10 @@ const StoryGenerator = () => {
 
 export default function WriteStory() {
     return (
-        <StoryProvider>
-            <StoryGenerator />
-        </StoryProvider>
+        <Layout>
+            <StoryProvider>
+                <StoryGenerator />
+            </StoryProvider>
+        </Layout>
     )
 }
