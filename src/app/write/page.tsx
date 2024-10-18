@@ -4,7 +4,7 @@ import { useState, Fragment, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-// import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import ImageLoader from "@/components/story/image";
 import { useChatContext, ChatProvider, IUser } from "@/components/chat/context";
@@ -12,6 +12,7 @@ import ChatDialog from "@/components/chat/chat";
 import CharacterProfile from "@/components/story/character";
 import { JSONTree } from 'react-json-tree';
 import OutlineComponent from "@/components/story/outline";
+import { StoryProvider, useStoryContext, ACTIONS } from "@/components/story/context";
 
 
 const AlertErrorBox = ({ error }: { error: string }) => {
@@ -23,78 +24,64 @@ const AlertErrorBox = ({ error }: { error: string }) => {
     ) : <></>
 }
 
-interface IStepOneProps {
-    premise: string;
-    setPremise: (v: string) => void;
-}
 
-const StepOne = ({ premise, setPremise }: IStepOneProps) => {
+
+const StepOne = () => {
+    const { state: { userPremise, currentStep }, dispatch } = useStoryContext();
     return (
         <div className="space-y-4">
             <Textarea
                 placeholder="Enter your story premise here..."
-                onChange={(e) => setPremise(e.target.value)}
+                onChange={(e) => dispatch({ type: ACTIONS.SET_USER_PREMISE, payload: e.target.value })}
                 rows={5}
                 aria-label="Story premise input"
-                value={premise}
+                value={userPremise}
+                readOnly={currentStep !== 1}
             />
         </div>
     );
 };
 
-interface IStepPremiseDisplayProps {
-    title: string;
-    premise: string;
-    setTitle: (v: string) => void;
-    setNewPremise: (v: string) => void;
-}
-const StepPremiseDisplay = ({ title, premise, setTitle, setNewPremise }: IStepPremiseDisplayProps) => {
+const StepPremiseDisplay = () => {
+    const { state: { title, premise, currentStep }, dispatch } = useStoryContext();
+    const [inputTitle, setInputTitle] = useState(title);
+    const [inputPremise, setInputPremise] = useState(premise);
+
     return (
         <div className="space-y-4">
             <h5 className="font-bold">TITLE</h5>
-            {/* <Input
-        placeholder="Enter your story title..."
-        onChange={(e) => setTitle(e.target.value)}
-        aria-label="Story title input"
-        value={title}
-      /> */}
-            <div className="w-full bg-background border border-border rounded-lg shadow-sm overflow-hidden">
-                <div className="p-3">
-                    <p className="text-sm">{title}</p>
-                </div>
-            </div>
+            <Input
+                placeholder="Enter your story title..."
+                onChange={(e) => setInputTitle(e.target.value)}
+                onBlur={() => dispatch({ type: ACTIONS.SET_PREMISE, payload: { title: inputTitle, premise } })}
+                aria-label="Story title input"
+                value={inputTitle}
+                readOnly={currentStep !== 2}
+            />
             <h5 className="font-bold">PREMISE</h5>
-            {/* <Textarea
-        placeholder="Enter your story premise here..."
-        onChange={(e) => setNewPremise(e.target.value)}
-        rows={5}
-        aria-label="Story premise input"
-        value={premise}
-      /> */}
-            <div className="w-full bg-background border border-border rounded-lg shadow-sm overflow-hidden">
-                <div className="p-3">
-                    <p className="text-sm">{premise}</p>
-                </div>
-            </div>
+            <Textarea
+                placeholder="Enter your story premise here..."
+                onChange={(e) => setInputPremise(e.target.value)}
+                onBlur={() => dispatch({ type: ACTIONS.SET_PREMISE, payload: { title, premise: inputPremise } })}
+                rows={5}
+                aria-label="Story premise input"
+                value={inputPremise}
+                readOnly={currentStep !== 2}
+            />
             <h5 className="font-bold">COVER</h5>
             <ImageLoader prompt={premise} alt="" />
         </div>
     )
 }
 
-interface IStepPlanDisplayProps {
-    story: any;
-}
-
-const StepPlanDisplay = ({ story }: IStepPlanDisplayProps) => {
+const StepPlanDisplay = () => {
+    const { state: { plan } } = useStoryContext();
     const { openChat, setUsers, users } = useChatContext();
     const [init, setInit] = useState(true);
 
     const handleChat = (user: IUser) => {
         openChat(user);
     }
-    console.log("====users", users)
-
     const requestGenerateImage = async (et: IUser) => {
         try {
             const response = await fetch(`/api/generate_image`, {
@@ -113,10 +100,10 @@ const StepPlanDisplay = ({ story }: IStepPlanDisplayProps) => {
     }
 
     useEffect(() => {
-        if (story?.entities) {
-            setUsers(story.entities);
+        if (plan?.entities) {
+            setUsers(plan.entities);
         }
-    }, [story])
+    }, [plan])
 
     useEffect(() => {
         if (init && users.length) {
@@ -133,15 +120,15 @@ const StepPlanDisplay = ({ story }: IStepPlanDisplayProps) => {
                 {users.map((et: IUser, index: number) => <CharacterProfile key={index} name={et.name} bio={et.description} avatar={et.avatar} onChatClick={handleChat} />)}
             </div>
             <h5 className="font-bold">DATA</h5>
-            <JSONTree data={story} />
+            <JSONTree data={plan} />
             <h5 className="font-bold">SETTING</h5>
             <div className="w-full bg-background border border-border rounded-lg shadow-sm overflow-hidden">
                 <div className="p-3">
-                    <p className="text-sm">{story.setting}</p>
+                    <p className="text-sm">{plan?.setting}</p>
                 </div>
             </div>
             <h5 className="font-bold">OUTLINE</h5>
-            <OutlineComponent data={story.outline} />
+            <OutlineComponent data={plan!.outline} />
             <ChatDialog />
         </div>
     );
@@ -167,20 +154,14 @@ const StepStoryDisplay = ({ story }: IStepStoryDisolayProps) => {
     )
 };
 
-// Main component
-export default function StoryGenerator() {
-    const [currentStep, setCurrentStep] = useState(1);
-    const [premise, setPremise] = useState("A young man named Alex wakes up one morning to find that he has the ability to read minds.");
-    const [storyData, setStoryData] = useState();
-    const [story, setStory] = useState("");
-    const [title, setTitle] = useState("");
-    const [newPremise, setNewPremise] = useState("");
+const StoryGenerator = () => {
+    const { state: { currentStep, userPremise, premise, title, plan, fullStory }, dispatch } = useStoryContext();
 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
 
     const handleNext = () => {
-        setCurrentStep(currentStep + 1);
+        dispatch({ type: ACTIONS.ADD_STEP })
     };
     const handleRequestPremise = async () => {
         setIsLoading(true);
@@ -188,7 +169,7 @@ export default function StoryGenerator() {
         try {
             const response = await fetch("/api/premise", {
                 method: "POST", body: JSON.stringify({
-                    premise,
+                    premise: userPremise,
                 })
             });
             if (!response.ok) {
@@ -196,9 +177,8 @@ export default function StoryGenerator() {
             }
             const data = await response.json();
             console.log("==1==data:", data)
-            setTitle(data?.title);
-            setNewPremise(data?.premise);
-            setCurrentStep(currentStep + 1);
+            dispatch({ type: ACTIONS.SET_PREMISE, payload: { premise: data?.premise, title: data?.title } })
+            dispatch({ type: ACTIONS.ADD_STEP })
         } catch (err) {
             setError("An error occurred while executing the premise command");
             console.error(err);
@@ -222,7 +202,7 @@ export default function StoryGenerator() {
             }
             const data = await response.json();
             console.log("==2==data:", data)
-            setStoryData(data);
+            dispatch({ type: ACTIONS.SET_PLAN, payload: data })
             handleNext();
         } catch (err) {
             setError("An error occurred while executing the premise command");
@@ -244,7 +224,7 @@ export default function StoryGenerator() {
             }
             const data = await response.json();
             console.log("==3==data:", data.story)
-            setStory(data?.story);
+            dispatch({ type: ACTIONS.SET_FULL_STORY, payload: data?.story })
             handleNext();
         } catch (err) {
             setError("An error occurred while executing the premise command");
@@ -266,12 +246,7 @@ export default function StoryGenerator() {
                 handleRequestStory();
                 break;
             case 4:
-                setCurrentStep(1);
-                setStory("")
-                setStoryData(undefined);
-                setTitle("");
-                setPremise("");
-                setNewPremise("");
+                dispatch({ type: ACTIONS.REVERT_STEP })
                 break;
         }
     }
@@ -285,12 +260,12 @@ export default function StoryGenerator() {
             />
 
             <div className="space-y-4">
-                <StepOne setPremise={setPremise} premise={premise} />
-                {title && newPremise && 2 && <StepPremiseDisplay title={title} setTitle={setTitle} premise={newPremise} setNewPremise={setNewPremise} />}
-                {storyData && <ChatProvider><StepPlanDisplay story={storyData} /></ChatProvider>}
-                {story && <StepStoryDisplay story={story} />}
+                <StepOne />
+                {title && premise && <StepPremiseDisplay />}
+                {plan && <ChatProvider><StepPlanDisplay /></ChatProvider>}
+                {fullStory && <StepStoryDisplay story={fullStory} />}
                 <div className="text-center">
-                    <Button onClick={handleClick} disabled={isLoading || (currentStep === 1 && !premise)} >
+                    <Button onClick={handleClick} disabled={isLoading || (currentStep === 1 && !userPremise)} >
                         {isLoading ? "Executing..." : currentStep === 1 ? 'Start' : currentStep === 4 ? 'Restart' : 'Continue'}
                     </Button>
                 </div>
@@ -298,4 +273,12 @@ export default function StoryGenerator() {
             </div>
         </div>
     );
+}
+
+export default function WriteStory() {
+    return (
+        <StoryProvider>
+            <StoryGenerator />
+        </StoryProvider>
+    )
 }
